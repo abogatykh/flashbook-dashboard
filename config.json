@@ -1,0 +1,128 @@
+{
+  "roas_horizon_days": 8,
+  "roas_label": "D7 (through the trial-end charge)",
+  "tests": [
+    {
+      "name": "Japan €60 vs €80",
+      "start": "17 Jun",
+      "status": "Running",
+      "wtone": "neutral",
+      "winner": "€80 back ahead this read — conversion 52% vs 44%, ARPPU €70.7 vs €62.4. But the verdict has flip-flopped across reads because the €80 arm is small (31 matured). Do NOT call it yet — needs more €80 volume to stabilize."
+    },
+    {
+      "name": "Romania free vs picker",
+      "start": "20 Jun",
+      "status": "Running",
+      "wtone": "good",
+      "winner": "Plan picker wins — with actual spend, D7 ROAS 0.64 vs 0.47 for free trial, and ~2.4× revenue per user. Free trial is the weakest on both."
+    },
+    {
+      "name": "Greece free vs picker",
+      "start": "26 Jun",
+      "status": "Running",
+      "wtone": "good",
+      "winner": "Plan picker wins on D7 ROAS with actual spend (0.57 vs 0.48) and monetizes far better per user. Picker mix stays monthly-heavy (yearly = 66% of revenue)."
+    },
+    {
+      "name": "Czechia paid trial €0.99",
+      "start": "6 Jul",
+      "status": "Running",
+      "wtone": "neutral",
+      "winner": "First real read: 23 matured, 39% convert to annual (9). €0.99 trial paid at 90%, ARPU/matured €30.3. Signal: €0.99 converts well below the €3.99 Greece test (57%) — the 4× lower barrier lets more in but fewer convert. Net winner needs Meta spend for ROAS."
+    },
+    {
+      "name": "RO+MD paid trial €0.99",
+      "start": "8 Jul",
+      "status": "Running",
+      "wtone": "neutral",
+      "winner": "First read: 13 matured, 38% convert to annual (5). €0.99 trial paid at 79%, ARPU/matured €24.1, 5 of the cohort are Moldova. Same pattern as Czechia — €0.99 converts below the €3.99 test 57%. Needs Meta spend for ROAS."
+    }
+  ],
+  "spend": {
+    "Romania free vs picker": {
+      "window": [
+        "2026-06-20",
+        "2026-07-01"
+      ],
+      "note": "ROAS D7 = net revenue within ~7 days of signup ÷ ad spend, run through the trial-end charge. Renewals not included.",
+      "arms": {
+        "rofree": {
+          "campaign": "CBO Trial started – RO",
+          "spend": 4449.64,
+          "flag": "Actual Meta spend for 20–30 Jun (windowed export)."
+        },
+        "ropick": {
+          "campaign": "CBO Purchase – RO (Test)",
+          "spend": 4256.36,
+          "flag": "Jun 19 → off total (≈ test window)"
+        }
+      }
+    },
+    "Japan €60 vs €80": {
+      "window": [
+        "2026-06-17",
+        "2026-07-17"
+      ],
+      "note": "Revenue D7 shown. Add Japan Meta spend (per arm, since 17 Jun) to compute ROAS.",
+      "arms": {
+        "jp60": {
+          "campaign": "Japan €60 campaign",
+          "spend": null,
+          "flag": "SPEND NEEDED — €60 arm, 17 Jun→now"
+        },
+        "jp80": {
+          "campaign": "Japan €80 campaign",
+          "spend": null,
+          "flag": "SPEND NEEDED — €80 arm, 17 Jun→now"
+        }
+      }
+    },
+    "Greece free vs picker": {
+      "window": [
+        "2026-06-26",
+        "2026-07-04"
+      ],
+      "note": "ROAS D7 through the trial-end charge. Two Greece campaigns: always-on free trial vs the plan-picker test.",
+      "arms": {
+        "grfree": {
+          "campaign": "CBO Trial started – GR",
+          "spend": 4767.91,
+          "flag": "Actual Meta spend for 26 Jun–3 Jul (windowed export)."
+        },
+        "grpick": {
+          "campaign": "CBO monthly/yearly plan – GR (Test)",
+          "spend": 4614.83,
+          "flag": "Jun 25 → off total (≈ test window)"
+        }
+      }
+    },
+    "Czechia paid trial €0.99": {
+      "window": [
+        "2026-07-03",
+        "2026-07-17"
+      ],
+      "note": "Add Czechia Meta spend to compute ROAS.",
+      "arms": {
+        "czpt": {
+          "campaign": "Czechia paid-trial campaign",
+          "spend": null,
+          "flag": "SPEND NEEDED"
+        }
+      }
+    },
+    "RO+MD paid trial €0.99": {
+      "window": [
+        "2026-07-03",
+        "2026-07-17"
+      ],
+      "note": "Add RO+MD Meta spend to compute ROAS.",
+      "arms": {
+        "rompt": {
+          "campaign": "RO+MD paid-trial campaign",
+          "spend": null,
+          "flag": "SPEND NEEDED"
+        }
+      }
+    }
+  }
+}
