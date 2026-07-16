@@ -3,57 +3,48 @@
 Run:  python build_dashboard.py [customers.csv] [payments.csv]
 Self-contained output (Chart.js via CDN). Numbers computed live from the CSV.
 """
-import sys, json, pandas as pd, numpy as np
+import sys, os, glob, json, pandas as pd, numpy as np
 from funnel_config import FUNNELS, BANDS, classify, num
 
-CUST = sys.argv[1] if len(sys.argv) > 1 else "merged_customers.csv"
-PAYS = sys.argv[2] if len(sys.argv) > 2 else "merged_payments.csv"
+DATA_DIR = os.environ.get("DATA_DIR", "data")
 
-# ============================ EDIT: AD SPEND ============================
-ROAS_HORIZON_DAYS = 8   # capture the trial-end (day-7) annual charge, which posts a few hours AFTER the 7.0-day mark.
-ROAS_LABEL = "D7 (through the trial-end charge)"  # a strict 7.0-day cut drops it and understates free trial.
-# Per test: the ad-spend window + spend per arm (from Meta). Revenue is computed
-# live for the SAME window, so ROAS = windowed net revenue ÷ spend.
-# Replace estimates with actual Meta "amount spent" for the exact window.
-SPEND = {
- "Romania free vs picker": {
-   "window": ["2026-06-20", "2026-07-01"],
-   "note": "ROAS D7 = net revenue within ~7 days of signup ÷ ad spend (the decision metric), run through the trial-end charge. Renewals not included.",
-   "arms": {
-     "rofree": {"campaign": "CBO Trial started – RO", "spend": 4449.64,
-                "flag": "Actual Meta spend for 20–30 Jun (windowed export). Was mistakenly treated as an estimate earlier."},
-     "ropick": {"campaign": "CBO Purchase – RO (Test)", "spend": 4256.36,
-                "flag": "Jun 19 → off total (≈ test window)"},
-   }},
- "Japan €60 vs €80": {
-   "window": ["2026-06-17", "2026-07-17"],
-   "note": "Revenue D7 shown. Add Japan Meta spend (per arm, since 17 Jun) to compute ROAS.",
-   "arms": {
-     "jp60": {"campaign": "Japan €60 campaign", "spend": None, "flag": "SPEND NEEDED — paste Meta amount spent for the €60 arm, 17 Jun→now"},
-     "jp80": {"campaign": "Japan €80 campaign", "spend": None, "flag": "SPEND NEEDED — paste Meta amount spent for the €80 arm, 17 Jun→now"},
-   }},
- "Greece free vs picker": {
-   "window": ["2026-06-26", "2026-07-04"],
-   "note": "ROAS D7 through the trial-end charge. Two Greece campaigns: always-on free trial vs the plan-picker test (Jun 25→off).",
-   "arms": {
-     "grfree": {"campaign": "CBO Trial started – GR", "spend": 4767.91,
-                "flag": "Actual Meta spend for 26 Jun–3 Jul (windowed export). Confirmed by user."},
-     "grpick": {"campaign": "CBO monthly/yearly plan – GR (Test)", "spend": 4614.83,
-                "flag": "Jun 25 → off total (≈ test window)"},
-   }},
- "Czechia paid trial €0.99": {
-   "window": ["2026-07-03", "2026-07-17"],
-   "note": "Started 6 Jul — 24 users, cohort still maturing (annual charge lands ~7 days out), so ROAS not yet meaningful. Add spend when it matures.",
-   "arms": {"czpt": {"campaign": "Czechia paid-trial campaign", "spend": None, "flag": "SPEND NEEDED — and cohort still maturing"}}},
- "RO+MD paid trial €0.99": {
-   "window": ["2026-07-03", "2026-07-17"],
-   "note": "Now receiving traffic (13 users, from 8 Jul) — cohort not yet matured. Add spend once it matures.",
-   "arms": {"rompt": {"campaign": "RO+MD paid-trial campaign", "spend": None, "flag": "SPEND NEEDED — cohort just started (13 users, not matured)"}}},
-}
-# ======================================================================
+def load_all():
+    """Read every CSV in data/, classify each as customers or payments by its
+    columns, then concat + dedupe by id → cumulative dataset. Drop new narrow
+    Stripe exports into data/ and history is preserved automatically."""
+    custs, pays = [], []
+    for f in sorted(glob.glob(os.path.join(DATA_DIR, "**", "*.csv"), recursive=True)):
+        df = pd.read_csv(f, dtype=str)
+        if "Customer ID" in df.columns:
+            pays.append(df)
+        elif "id" in df.columns:
+            custs.append(df)
+    if not custs or not pays:
+        raise SystemExit(f"Need both customer and payment CSVs in {DATA_DIR}/ (found {len(custs)} cust, {len(pays)} pay).")
+    c = pd.concat(custs, ignore_index=True).drop_duplicates("id", keep="last")
+    idc = "id" if "id" in pays[0].columns else pays[0].columns[0]
+    pay = pd.concat(pays, ignore_index=True).drop_duplicates(idc, keep="last")
+    print(f"Merged {len(custs)} customer + {len(pays)} payment file(s) → {len(c)} customers, {len(pay)} payments")
+    return c, pay
 
 
-c = pd.read_csv(CUST, dtype=str); pay = pd.read_csv(PAYS, dtype=str)
+# (data is loaded from data/ below, after the SPEND config)
+
+# ============================ CONFIG ============================
+# All editable content (verdicts + ad spend) now lives in config.json.
+# You never need to edit this Python file. Edit config.json instead.
+with open(os.path.join(os.path.dirname(__file__) or ".", "config.json"), encoding="utf-8") as _f:
+    CFG = json.load(_f)
+ROAS_HORIZON_DAYS = CFG.get("roas_horizon_days", 8)
+ROAS_LABEL = CFG.get("roas_label", "D7")
+SPEND = CFG["spend"]
+# ===============================================================
+
+
+if len(sys.argv) > 2:
+    c = pd.read_csv(sys.argv[1], dtype=str); pay = pd.read_csv(sys.argv[2], dtype=str)
+else:
+    c, pay = load_all()
 c['cr'] = pd.to_datetime(c['Created (UTC)'], errors='coerce', utc=True)
 pay['cr'] = pd.to_datetime(pay['Created date (UTC)'], errors='coerce', utc=True)
 NOW = pay['cr'].max()
@@ -126,23 +117,7 @@ add("Czechia paid trial €0.99", "Paid trial", "czpt", ids_of("quiz_v1_cz_pt_y6
 add("RO+MD paid trial €0.99", "Paid trial", "rompt", ids_of("quiz_v1_ro_pt_y60eur"), "quiz_v1_ro_pt_y60eur", 7, 45, typ="Paid trial", country="Romania+Moldova")
 
 # ---- per-test meta (status + winner) ----
-TESTS = [
- {"name": "Japan €60 vs €80", "start": "17 Jun", "status": "Running",
-  "winner": "€80 back ahead this read — conversion 52% vs 44%, ARPPU €70.7 vs €62.4. But the verdict has flip-flopped across reads because the €80 arm is small (31 matured). Do NOT call it yet — needs more €80 volume to stabilize.",
-  "wtone": "neutral"},
- {"name": "Romania free vs picker", "start": "20 Jun", "status": "Running",
-  "winner": "Plan picker wins — with actual spend, D7 ROAS 0.64 vs 0.47 for free trial, and ~2.4× revenue per user. Free trial is the weakest on both.",
-  "wtone": "good"},
- {"name": "Greece free vs picker", "start": "26 Jun", "status": "Running",
-  "winner": "Plan picker wins on D7 ROAS with actual spend (0.57 vs 0.48) and monetizes far better per user. Picker mix stays monthly-heavy (yearly = 66% of revenue).",
-  "wtone": "good"},
- {"name": "Czechia paid trial €0.99", "start": "6 Jul", "status": "Running",
-  "winner": "First real read: 23 matured, 39% convert to annual (9). €0.99 trial paid at 90%, ARPU/matured €30.3. Signal: €0.99 converts well below the €3.99 Greece test (57%) — the 4× lower barrier lets more in but fewer convert. Net winner needs Meta spend for ROAS.",
-  "wtone": "neutral"},
- {"name": "RO+MD paid trial €0.99", "start": "8 Jul", "status": "Running",
-  "winner": "First read: 13 matured, 38% convert to annual (5). €0.99 trial paid at 79%, ARPU/matured €24.1, 5 of the cohort are Moldova. Same pattern as Czechia — €0.99 converts below the €3.99 test's 57%. Needs Meta spend for ROAS.",
-  "wtone": "neutral"},
-]
+TESTS = CFG["tests"]
 
 def horizon_net(ids, w0, w1, days):
     """Net EUR realised within `days` of each customer's signup, for customers acquired in [w0,w1)."""
@@ -353,6 +328,7 @@ render();
 </script></body></html>"""
 
 html = TPL.replace("/*DATA_JSON*/", payload)
-out = "/home/claude/flashbook_dashboard.html"
+os.makedirs("site", exist_ok=True)
+out = os.path.join("site", "index.html")
 open(out, "w").write(html)
 print("saved", out, "| variants:", len(V), "| date", data_date)
