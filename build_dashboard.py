@@ -13,14 +13,16 @@ def load_all():
     columns, then concat + dedupe by id → cumulative dataset. Drop new narrow
     Stripe exports into data/ and history is preserved automatically."""
     custs, pays = [], []
-    for f in sorted(glob.glob(os.path.join(DATA_DIR, "**", "*.csv"), recursive=True)):
+    # Look for CSVs in data/ AND in the repo root, so a data/ folder is optional.
+    paths = glob.glob(os.path.join(DATA_DIR, "**", "*.csv"), recursive=True) + glob.glob("*.csv")
+    for f in sorted(set(paths)):
         df = pd.read_csv(f, dtype=str)
         if "Customer ID" in df.columns:
             pays.append(df)
         elif "id" in df.columns:
             custs.append(df)
     if not custs or not pays:
-        raise SystemExit(f"Need both customer and payment CSVs in {DATA_DIR}/ (found {len(custs)} cust, {len(pays)} pay).")
+        raise SystemExit(f"Need both customer and payment CSVs in data/ or repo root (found {len(custs)} cust, {len(pays)} pay).")
     c = pd.concat(custs, ignore_index=True).drop_duplicates("id", keep="last")
     idc = "id" if "id" in pays[0].columns else pays[0].columns[0]
     pay = pd.concat(pays, ignore_index=True).drop_duplicates(idc, keep="last")
