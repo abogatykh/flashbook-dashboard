@@ -26,7 +26,7 @@ SPEND = {
                 "flag": "Jun 19 → off total (≈ test window)"},
    }},
  "Japan €60 vs €80": {
-   "window": ["2026-06-17", "2026-07-15"],
+   "window": ["2026-06-17", "2026-07-17"],
    "note": "Revenue D7 shown. Add Japan Meta spend (per arm, since 17 Jun) to compute ROAS.",
    "arms": {
      "jp60": {"campaign": "Japan €60 campaign", "spend": None, "flag": "SPEND NEEDED — paste Meta amount spent for the €60 arm, 17 Jun→now"},
@@ -42,11 +42,11 @@ SPEND = {
                 "flag": "Jun 25 → off total (≈ test window)"},
    }},
  "Czechia paid trial €0.99": {
-   "window": ["2026-07-03", "2026-07-15"],
+   "window": ["2026-07-03", "2026-07-17"],
    "note": "Started 6 Jul — 24 users, cohort still maturing (annual charge lands ~7 days out), so ROAS not yet meaningful. Add spend when it matures.",
    "arms": {"czpt": {"campaign": "Czechia paid-trial campaign", "spend": None, "flag": "SPEND NEEDED — and cohort still maturing"}}},
  "RO+MD paid trial €0.99": {
-   "window": ["2026-07-03", "2026-07-15"],
+   "window": ["2026-07-03", "2026-07-17"],
    "note": "Now receiving traffic (13 users, from 8 Jul) — cohort not yet matured. Add spend once it matures.",
    "arms": {"rompt": {"campaign": "RO+MD paid-trial campaign", "spend": None, "flag": "SPEND NEEDED — cohort just started (13 users, not matured)"}}},
 }
@@ -136,12 +136,12 @@ TESTS = [
  {"name": "Greece free vs picker", "start": "26 Jun", "status": "Running",
   "winner": "Plan picker wins on D7 ROAS with actual spend (0.57 vs 0.48) and monetizes far better per user. Picker mix stays monthly-heavy (yearly = 66% of revenue).",
   "wtone": "good"},
- {"name": "Czechia paid trial €0.99", "start": "6 Jul", "status": "Just started",
-  "winner": "First conversions in: of 5 matured, 2 converted to annual (~40%). €0.99 trial paid at 91%, 20 upsell buyers. Sample tiny (5 matured) — directional only; the €3.99 Greece test hit 57%, so watch whether the lower barrier holds conversion as more mature.",
-  "wtone": "warn"},
- {"name": "RO+MD paid trial €0.99", "start": "8 Jul", "status": "Just started",
-  "winner": "55 users (mostly RO, 2 MD); €0.99 trial paid at ~78%, 18 upsell buyers. Still 0 matured (earliest ~6d) — first annual charges land ~15 Jul. No conversion read yet.",
-  "wtone": "warn"},
+ {"name": "Czechia paid trial €0.99", "start": "6 Jul", "status": "Running",
+  "winner": "First real read: 23 matured, 39% convert to annual (9). €0.99 trial paid at 90%, ARPU/matured €30.3. Signal: €0.99 converts well below the €3.99 Greece test (57%) — the 4× lower barrier lets more in but fewer convert. Net winner needs Meta spend for ROAS.",
+  "wtone": "neutral"},
+ {"name": "RO+MD paid trial €0.99", "start": "8 Jul", "status": "Running",
+  "winner": "First read: 13 matured, 38% convert to annual (5). €0.99 trial paid at 79%, ARPU/matured €24.1, 5 of the cohort are Moldova. Same pattern as Czechia — €0.99 converts below the €3.99 test's 57%. Needs Meta spend for ROAS.",
+  "wtone": "neutral"},
 ]
 
 def horizon_net(ids, w0, w1, days):
